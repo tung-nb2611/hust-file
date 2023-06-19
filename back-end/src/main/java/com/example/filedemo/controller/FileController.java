@@ -41,8 +41,8 @@ public class FileController {
 
 
     @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
-        DBFile dbFile = fileStorageService.storeFile(file);
+    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("description") String description ) throws IOException {
+        DBFile dbFile = fileStorageService.storeFile(file,description);
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/downloadFile/"+dbFile.getId())
@@ -52,7 +52,9 @@ public class FileController {
         uploadFileResponse.setFileName(dbFile.getName());
         uploadFileResponse.setFileType(dbFile.getType());
         uploadFileResponse.setFileDownloadUri(fileDownloadUri);
-
+        uploadFileResponse.setCreatedOn(dbFile.getCreatedOn());
+        uploadFileResponse.setModifiedOn(dbFile.getModifiedOn());
+        uploadFileResponse.setDescription(dbFile.getDescription());
         return uploadFileResponse;
     }
 
@@ -62,7 +64,7 @@ public class FileController {
                 .stream()
                 .map(file -> {
                     try {
-                        return uploadFile(file);
+                        return uploadFile(file,"");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

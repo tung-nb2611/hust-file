@@ -27,9 +27,9 @@ public class DBFile {
     @Column(name = "size")
     private String size;
     @Column(name = "created_on")
-    private Date createdOn;
+    private long createdOn;
 
     @Column(name = "modified_on")
-    private Date modifiedOn;
+    private long modifiedOn;
 
 }

@@ -1,5 +1,6 @@
 package com.example.filedemo.service;
 
+import com.example.filedemo.common.Common;
 import com.example.filedemo.common.FileStorageProperties;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.exception.MyFileNotFoundException;
@@ -38,7 +39,7 @@ public class FileStorageService {
         }
     }
 
-    public DBFile storeFile(MultipartFile file) throws IOException {
+    public DBFile storeFile(MultipartFile file, String description) throws IOException {
         // Normalize file name
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         // Check if the file's name contains invalid characters
@@ -47,8 +48,11 @@ public class FileStorageService {
             }
             DBFile dbFile = new DBFile();
             dbFile.setName(fileName);
+            dbFile.setDescription(description);
             dbFile.setType(file.getContentType());
             String data = new String(file.getBytes(), StandardCharsets.UTF_8);
+            dbFile.setCreatedOn(Common.getTimestamp());
+            dbFile.setModifiedOn(0);
 //            dbFile.setSize(data);
         return fileRepository.save(dbFile);
     }

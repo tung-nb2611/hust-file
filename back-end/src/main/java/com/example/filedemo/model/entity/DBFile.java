@@ -8,12 +8,12 @@ import javax.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "product")
+@Table(name = "file")
 @Getter
 @Setter
 public class DBFile {
-    @Id
-    @GeneratedValue(generator = "uuid")
+    @Id // xác định đây là khoá chính.
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment.
     @Column(name = "id")
     private int id;
     @Column(name = "name")
@@ -26,10 +26,11 @@ public class DBFile {
     private String description;
     @Column(name = "size")
     private String size;
+    @Column(name = "status")
+    private int status;
     @Column(name = "created_on")
-    private Date createdOn;
-
+    private long createdOn;
     @Column(name = "modified_on")
-    private Date modifiedOn;
+    private long modifiedOn;
 
 }

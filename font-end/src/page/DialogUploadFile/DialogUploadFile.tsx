@@ -15,6 +15,7 @@ export interface DialogUploadFileProps {
 const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof styles>) => {
     const { open, onClose, classes } = props;
     const [fileImport, setFileImport] = React.useState<File[] | null>();
+    const [description, setDescription] = React.useState<string | undefined>();
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: (acceptedFiles) => {
             if (fileImport) {
@@ -30,7 +31,9 @@ const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof style
             const data = new FormData();
             fileImport?.map((item) => {
                 data.append("file", item);
+            
             });
+            // data.append("description", value)
             try {
                 FileServices.uploadFile(data)
                   .then((res) => {

@@ -9,4 +9,8 @@ public class Common {
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         return Date.from(now.toInstant()).getTime() ;
     }
+    public class FileStatus {
+        public final static int ACTIVE = 1;
+        public final static int DELETED = 2;
+    }
 }

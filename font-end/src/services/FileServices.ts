@@ -5,9 +5,8 @@ import {
 } from "./types";
 
 class FileServices {
-    
   static async uploadFile(data?: FormData): Promise<AxiosResponse<FileResponse>> {
-    return axios.post("/uploadFile", data, {
+    return axios.post("/api/file",data,{
         ...getAxiosConfig(),
         headers: {
           ...getAxiosConfig().headers,

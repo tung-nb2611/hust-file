@@ -6,6 +6,7 @@ import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.exception.MyFileNotFoundException;
 import com.example.filedemo.model.entity.DBFile;
 import com.example.filedemo.repository.FileRepository;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -28,6 +29,7 @@ public class FileStorageService {
     private FileRepository fileRepository;
 
     @Autowired
+    // lưu file vào thư mục đã setup
     public FileStorageService(FileStorageProperties fileStorageProperties) {
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
@@ -39,39 +41,32 @@ public class FileStorageService {
         }
     }
 
-    public DBFile storeFile(MultipartFile file, String description) throws IOException {
-        // Normalize file name
+    public DBFile storeFile(MultipartFile file,String description) throws IOException {
+        // lấy tên file
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        // Check if the file's name contains invalid characters
+        // Check nếu tên file trống báo lỗi
             if(fileName.contains("..")) {
                 throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
             }
             DBFile dbFile = new DBFile();
             dbFile.setName(fileName);
-            dbFile.setDescription(description);
             dbFile.setType(file.getContentType());
-            String data = new String(file.getBytes(), StandardCharsets.UTF_8);
+            dbFile.setDescription(description);
+            dbFile.setStatus(Common.FileStatus.ACTIVE);
             dbFile.setCreatedOn(Common.getTimestamp());
-            dbFile.setModifiedOn(0);
-//            dbFile.setSize(data);
         return fileRepository.save(dbFile);
     }
-//    public DBFile getFile(String fileId) {
-//        return dbFileRepository.findById(fileId)
-//                .orElseThrow(() -> new MyFileNotFoundException("File not found with id " + fileId));
-//    }
-
-    public Resource loadFileAsResource(String fileName) {
-        try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if(resource.exists()) {
-                return resource;
-            } else {
-                throw new MyFileNotFoundException("File not found " + fileName);
-            }
-        } catch (MalformedURLException ex) {
-            throw new MyFileNotFoundException("File not found " + fileName, ex);
+    public DBFile updateFile(MultipartFile file, int id,String description) throws IOException {
+        val dbFile = fileRepository.findById(id);
+        if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        if(fileName.contains("..")) {
+            throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
         }
+        dbFile.get().setName(fileName);
+        dbFile.get().setType(file.getContentType());
+        dbFile.get().setDescription(description);
+        dbFile.get().setModifiedOn(Common.getTimestamp());
+        return fileRepository.save(dbFile.get());
     }
 }

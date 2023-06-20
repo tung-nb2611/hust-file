@@ -1,5 +1,7 @@
 package com.example.filedemo.controller;
 
+import com.example.filedemo.common.Common;
+import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.repository.FileRepository;
@@ -28,20 +30,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping(value = "/api/file")
+@CrossOrigin("http://localhost:3000")
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
-
-
-
     @Autowired
     private FileStorageService fileStorageService;
     @Autowired
     private FileRepository fileRepository;
 
-
-    @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("description") String description ) throws IOException {
+// upload 1 file
+    @PostMapping
+    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("description") String description) throws IOException {
+        // lưu file vào db
         DBFile dbFile = fileStorageService.storeFile(file,description);
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
@@ -52,19 +54,20 @@ public class FileController {
         uploadFileResponse.setFileName(dbFile.getName());
         uploadFileResponse.setFileType(dbFile.getType());
         uploadFileResponse.setFileDownloadUri(fileDownloadUri);
-        uploadFileResponse.setCreatedOn(dbFile.getCreatedOn());
-        uploadFileResponse.setModifiedOn(dbFile.getModifiedOn());
         uploadFileResponse.setDescription(dbFile.getDescription());
+        uploadFileResponse.setStatus(dbFile.getStatus());
+        uploadFileResponse.setModifiedOn(dbFile.getModifiedOn());
+        uploadFileResponse.setCreateOn(dbFile.getCreatedOn());
         return uploadFileResponse;
     }
 
-    @PostMapping("/uploadMultipleFiles")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files)throws IOException {
+    @PostMapping(value = "/list")
+    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,@RequestParam("description") String description)throws IOException {
         return Arrays.asList(files)
                 .stream()
                 .map(file -> {
                     try {
-                        return uploadFile(file,"");
+                        return uploadFile(file,description);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -72,16 +75,59 @@ public class FileController {
                 })
                 .collect(Collectors.toList());
     }
+    @PutMapping(value = "{id}")
+    public UploadFileResponse updateFile(@RequestParam("id") int id,@RequestParam("file") MultipartFile file,@RequestParam("description") String description) throws IOException {
 
-    @GetMapping("/downloadFile/{id}")
+        DBFile dbFile = fileStorageService.updateFile(file,id,description);
+        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/downloadFile/"+dbFile.getId())
+                .toUriString();
+        UploadFileResponse uploadFileResponse = new UploadFileResponse();
+        uploadFileResponse.setSize(file.getSize());
+        uploadFileResponse.setFileName(dbFile.getName());
+        uploadFileResponse.setFileType(dbFile.getType());
+        uploadFileResponse.setFileDownloadUri(fileDownloadUri);
+        uploadFileResponse.setDescription(dbFile.getDescription());
+        uploadFileResponse.setStatus(dbFile.getStatus());
+        uploadFileResponse.setModifiedOn(dbFile.getModifiedOn());
+        uploadFileResponse.setCreateOn(dbFile.getCreatedOn());
+        return uploadFileResponse;
+    }
+    @GetMapping(value = "{id}")
+    public UploadFileResponse getById(@PathVariable("id") int id) throws IOException {
+        val dbFile = fileRepository.findById(id);
+        if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
+        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/downloadFile/"+dbFile.get().getId())
+                .toUriString();
+        UploadFileResponse uploadFileResponse = new UploadFileResponse();
+        uploadFileResponse.setFileName(dbFile.get().getName());
+        uploadFileResponse.setFileType(dbFile.get().getType());
+        uploadFileResponse.setFileDownloadUri(fileDownloadUri);
+        uploadFileResponse.setDescription(dbFile.get().getDescription());
+        uploadFileResponse.setStatus(dbFile.get().getStatus());
+        uploadFileResponse.setModifiedOn(dbFile.get().getModifiedOn());
+        uploadFileResponse.setCreateOn(dbFile.get().getCreatedOn());
+        return uploadFileResponse;
+    }
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable("id") int id){
+        val dbFile = fileRepository.findById(id);
+        if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
+        dbFile.get().setModifiedOn(Common.getTimestamp());
+        dbFile.get().setStatus(Common.FileStatus.DELETED);
+        try {
+            fileRepository.save(dbFile.get());
+        } catch (Exception e) {
+            throw new FileStorageException("Xoá file thất bại");
+        }
+
+    }
+    @GetMapping(value = "/download/{id}")
     public ResponseEntity<Resource> downloadFile(@PathVariable int id) throws MalformedURLException {
         // Load file from database
         val dbFile = fileRepository.findById(id);
-//        Path filePath = this.fileStorageLocation.resolve(dbFile.get().getName()).normalize();
-//        Resource resource = new UrlResource(filePath.toUri());
-        // string to byte[]
         byte[] bytes = dbFile.get().getSize().getBytes(StandardCharsets.UTF_8);
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(dbFile.get().getType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dbFile.get().getName() + "\"")

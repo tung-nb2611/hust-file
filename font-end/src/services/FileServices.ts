@@ -15,6 +15,16 @@ class FileServices {
         timeout: 5000,
       });
   }
+  static async uploadFiles(data?: FormData): Promise<AxiosResponse<FileResponse[]>> {
+    return axios.post("/api/file/list",data,{
+        ...getAxiosConfig(),
+        headers: {
+          ...getAxiosConfig().headers,
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 5000,
+      });
+  }
 }
 
 export default FileServices;

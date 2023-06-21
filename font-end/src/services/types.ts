@@ -46,13 +46,14 @@ export type Pageable = {
 export type FileResponse = {
   id?: number;
   description?: string;
-  name?: string;
-  path?: string;
-  type?: string;
+  fileName?: string;
+  fileDownloadUri?: string;
+  fileType?: string;
+  size?: string;
+  status?: number;
   createdOn?: Date;
   modifiedOn?: Date;
 }
-
 export type FileRequest = {
   
 }

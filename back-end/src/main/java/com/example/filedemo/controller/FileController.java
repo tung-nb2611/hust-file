@@ -3,6 +3,8 @@ package com.example.filedemo.controller;
 import com.example.filedemo.common.Common;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
+import com.example.filedemo.payload.FileFilterRequest;
+import com.example.filedemo.payload.PagingListResponse;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.repository.FileRepository;
 import com.example.filedemo.service.FileStorageService;
@@ -63,17 +65,7 @@ public class FileController {
 
     @PostMapping(value = "/list")
     public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,@RequestParam("description") String description)throws IOException {
-        return Arrays.asList(files)
-                .stream()
-                .map(file -> {
-                    try {
-                        return uploadFile(file,description);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
-                .collect(Collectors.toList());
+        return fileStorageService.uploadFiles(files, description);
     }
     @PutMapping(value = "{id}")
     public UploadFileResponse updateFile(@RequestParam("id") int id,@RequestParam("file") MultipartFile file,@RequestParam("description") String description) throws IOException {
@@ -127,11 +119,16 @@ public class FileController {
     public ResponseEntity<Resource> downloadFile(@PathVariable int id) throws MalformedURLException {
         // Load file from database
         val dbFile = fileRepository.findById(id);
-        byte[] bytes = dbFile.get().getSize().getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = String.valueOf(dbFile.get().getSize()).getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(dbFile.get().getType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dbFile.get().getName() + "\"")
                 .body(new ByteArrayResource(bytes));
+    }
+
+    @GetMapping
+    public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter){
+        return fileStorageService.filter(filter);
     }
 
 }

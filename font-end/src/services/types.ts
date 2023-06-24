@@ -49,11 +49,21 @@ export type FileResponse = {
   fileName?: string;
   fileDownloadUri?: string;
   fileType?: string;
-  size?: string;
+  size?: number;
   status?: number;
-  createdOn?: Date;
+  createOn?: Date;
   modifiedOn?: Date;
 }
+export type ListFileResponse = {
+  data: FileResponse[];
+  metadata: Metadata;
+}
+export type FileFilterRequest = {
+  query?: string;
+  statuses?: string;
+  page?: number;
+  limit?: number;
+}
 export type FileRequest = {
-  
+  description?: string;
 }

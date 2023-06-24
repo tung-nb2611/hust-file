@@ -1,7 +1,10 @@
 import axios, { AxiosResponse } from "axios";
 import { getAxiosConfig } from "./config";
 import {
-    FileResponse
+  FileFilterRequest,
+    FileRequest,
+    FileResponse,
+    ListFileResponse
 } from "./types";
 
 class FileServices {
@@ -12,7 +15,6 @@ class FileServices {
           ...getAxiosConfig().headers,
           "Content-Type": "multipart/form-data",
         },
-        timeout: 5000,
       });
   }
   static async uploadFiles(data?: FormData): Promise<AxiosResponse<FileResponse[]>> {
@@ -22,7 +24,22 @@ class FileServices {
           ...getAxiosConfig().headers,
           "Content-Type": "multipart/form-data",
         },
-        timeout: 5000,
+      });
+  }
+  static async filter(filter?: FileFilterRequest): Promise<AxiosResponse<ListFileResponse>> {
+    return axios.get("/api/file",{
+        ...getAxiosConfig(),
+        params: filter,
+      });
+  }
+  static async updateFile(id?: number, request?: FileRequest): Promise<AxiosResponse<FileResponse>> {
+    return axios.put(`/api/file/${id}`,request,{
+        ...getAxiosConfig(),
+      });
+  }
+  static async delete(id?: number): Promise<AxiosResponse<FileResponse>> {
+    return axios.delete(`/api/file/${id}`,{
+        ...getAxiosConfig(),
       });
   }
 }

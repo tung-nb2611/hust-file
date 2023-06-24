@@ -1,6 +1,7 @@
 package com.example.filedemo.service;
 
 import com.example.filedemo.common.Common;
+import com.example.filedemo.common.FileDownloadUtil;
 import com.example.filedemo.common.FileStorageProperties;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
@@ -13,9 +14,14 @@ import lombok.var;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -75,30 +81,22 @@ public class FileStorageService {
         return fileRepository.save(dbFile);
     }
 
-    public DBFile updateFile(MultipartFile file, int id, String description) throws IOException {
-        val dbFile = fileRepository.findById(id);
-        if (dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        if (fileName.contains("..")) {
-            throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
-        }
-        dbFile.get().setName(fileName);
-        dbFile.get().setType(file.getContentType());
-        dbFile.get().setDescription(description);
-        dbFile.get().setModifiedOn(Common.getTimestamp());
-        return fileRepository.save(dbFile.get());
-    }
-
     public UploadFileResponse uploadFile(MultipartFile file, String description) throws IOException {
         DBFile dbFile = storeFile(file, description);
 
+        UploadFileResponse uploadFileResponse = mapperFileResponse(dbFile);
+        return uploadFileResponse;
+    }
+
+    public UploadFileResponse mapperFileResponse(DBFile dbFile) {
+        UploadFileResponse uploadFileResponse = new UploadFileResponse();
+        uploadFileResponse.setSize(dbFile.getSize());
+        uploadFileResponse.setId(dbFile.getId());
+        uploadFileResponse.setFileName(dbFile.getName());
+        uploadFileResponse.setFileType(dbFile.getType());
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/downloadFile/" + dbFile.getId())
                 .toUriString();
-        UploadFileResponse uploadFileResponse = new UploadFileResponse();
-        uploadFileResponse.setSize(file.getSize());
-        uploadFileResponse.setFileName(dbFile.getName());
-        uploadFileResponse.setFileType(dbFile.getType());
         uploadFileResponse.setFileDownloadUri(fileDownloadUri);
         uploadFileResponse.setDescription(dbFile.getDescription());
         uploadFileResponse.setStatus(dbFile.getStatus());
@@ -118,31 +116,56 @@ public class FileStorageService {
         return responses;
     }
 
-    public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter){
-        var query = "%" + filter.getQuery() + "%";
+    public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter) {
+        var query = "%" + (filter.getQuery() != null ? filter.getQuery() : "") + "%";
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        Pageable pageable = PageRequest.of(filter.getPage(), filter.getLimit(), sort);
+        Pageable pageable = PageRequest.of(filter.getPage() - 1, filter.getLimit(), sort);
         List<Integer> statuses = new ArrayList<>();
-        if(filter.getStatuses() != null){
+        if (filter.getStatuses() != null) {
             val statusArr = filter.getStatuses().split(",");
-            for (var status: statusArr) {
-                if(status.equals("1")){
+            for (var status : statusArr) {
+                if (status.equals("1")) {
                     statuses.add(1);
                 }
                 if (status.equals("2"))
                     statuses.add(2);
             }
-        }else{
+        } else {
             statuses.add(1);
         }
-        var files = fileRepository.filter(query, pageable);
+        var files = fileRepository.filter(query, statuses, pageable);
         List<UploadFileResponse> responses = new ArrayList<>();
-        for (val file: files.getContent()) {
-            var response = mapper.map(file, UploadFileResponse.class);
+        for (val file : files.getContent()) {
+            var response = mapperFileResponse(file);
             responses.add(response);
         }
         return new PagingListResponse<>(
                 responses,
                 new PagingListResponse.Metadata(filter.getPage(), filter.getLimit(), files.getTotalElements()));
     }
+
+    public ResponseEntity<?> downloadFile(int id) {
+
+        FileDownloadUtil downloadUtil = new FileDownloadUtil();
+        Resource resource = null;
+        val dbFile = fileRepository.findById(id);
+        try {
+            resource = downloadUtil.getFileAsResource(dbFile.get().getName(), sourceFile);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (resource == null) {
+            return new ResponseEntity<>("File not found", HttpStatus.NOT_FOUND);
+        }
+
+        String contentType = "application/octet-stream";
+        String headerValue = "attachment; filename=\"" + resource.getFilename() + "\"";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+                .body(resource);
+    }
+
 }

@@ -69,7 +69,6 @@ const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof style
         }
     };
 
-
     return (
         <Fragment>
             <Dialog

@@ -2,31 +2,7 @@ import { createStyles, Theme } from "@material-ui/core";
 import defaultPalette, { colorInk } from "theme/palette";
 const styles = (theme: Theme) =>
   createStyles({
-    container: {
-      display: "flex",
-      flexDirection: "column",
-      backgroundColor: "#F4F4F4",
-      padding: "0 32px 40px",
-      flex: "1 1 auto",
-      "& .MuiChip-root": {
-        padding: "4px 4px",
-        fontSize: "14px",
-        height: "24px",
-      },
-      "& .MuiTableContainer-root.stickyHeader": {
-        backgroundColor: "#F3F4F5",
-      },
-      "& .MuiTableHead-root": {
-        backgroundColor: "#F3F4F5",
-        "& .MuiTableCell-paddingNone": {
-          padding: "0 16px",
-        },
-        "& .MuiTableCell-root": {
-          paddingTop: "12px",
-          paddingBottom: "12px",
-        },
-      },
-    },
+    
     listBox: {
       backgroundColor: "white",
       boxShadow: "0px 2px 4px rgba(168, 168, 168, 0.25)",

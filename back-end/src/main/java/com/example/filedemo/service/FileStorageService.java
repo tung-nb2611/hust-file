@@ -2,7 +2,6 @@ package com.example.filedemo.service;
 
 import com.example.filedemo.common.Common;
 import com.example.filedemo.common.FileDownloadUtil;
-import com.example.filedemo.common.FileStorageProperties;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
 import com.example.filedemo.payload.FileFilterRequest;
@@ -12,7 +11,6 @@ import com.example.filedemo.repository.FileRepository;
 import lombok.val;
 import lombok.var;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
@@ -29,35 +27,22 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class FileStorageService {
 
-    private final Path fileStorageLocation;
-    @Autowired
-    private FileRepository fileRepository;
+    private final FileRepository fileRepository;
     @Value("${file.upload-dir}")
     private String sourceFile;
 
     private final ModelMapper mapper;
 
-    @Autowired
-    // lưu file vào thư mục đã setup
-    public FileStorageService(FileStorageProperties fileStorageProperties, ModelMapper mapper) {
-        this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
-                .toAbsolutePath().normalize();
+    public FileStorageService(FileRepository fileRepository, ModelMapper mapper) {
+        this.fileRepository = fileRepository;
         this.mapper = mapper;
 
-        try {
-            Files.createDirectories(this.fileStorageLocation);
-        } catch (Exception ex) {
-            throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
-        }
     }
 
     public DBFile storeFile(MultipartFile file, String description) throws IOException {
@@ -65,7 +50,7 @@ public class FileStorageService {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         // Check nếu tên file trống báo lỗi
         if (fileName.contains("..")) {
-            throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
+            throw new FileStorageException("Tên file chứa path không hợp lệ" + fileName);
         }
         DBFile dbFile = new DBFile();
         dbFile.setName(fileName);
@@ -93,6 +78,9 @@ public class FileStorageService {
         uploadFileResponse.setSize(dbFile.getSize());
         uploadFileResponse.setId(dbFile.getId());
         uploadFileResponse.setFileName(dbFile.getName());
+        uploadFileResponse.setPath(ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/upload/" + dbFile.getName())
+                .toUriString());
         uploadFileResponse.setFileType(dbFile.getType());
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/downloadFile/" + dbFile.getId())

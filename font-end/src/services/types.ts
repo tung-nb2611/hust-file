@@ -53,6 +53,7 @@ export type FileResponse = {
   status?: number;
   createOn?: Date;
   modifiedOn?: Date;
+  path?: string;
 }
 export type ListFileResponse = {
   data: FileResponse[];

@@ -9,6 +9,7 @@ public class UploadFileResponse {
     private int id;
     private String fileName;
     private String fileDownloadUri;
+    private String path;
     private String fileType;
     private long size;
     private String description;

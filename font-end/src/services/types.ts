@@ -46,13 +46,25 @@ export type Pageable = {
 export type FileResponse = {
   id?: number;
   description?: string;
-  name?: string;
-  path?: string;
-  type?: string;
-  createdOn?: Date;
+  fileName?: string;
+  fileDownloadUri?: string;
+  fileType?: string;
+  size?: number;
+  status?: number;
+  createOn?: Date;
   modifiedOn?: Date;
+  path?: string;
 }
-
+export type ListFileResponse = {
+  data: FileResponse[];
+  metadata: Metadata;
+}
+export type FileFilterRequest = {
+  query?: string;
+  statuses?: string;
+  page?: number;
+  limit?: number;
+}
 export type FileRequest = {
-  
+  description?: string;
 }

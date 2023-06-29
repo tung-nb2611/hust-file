@@ -3,6 +3,9 @@ package com.example.filedemo.controller;
 import com.example.filedemo.common.Common;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
+import com.example.filedemo.payload.FileFilterRequest;
+import com.example.filedemo.payload.FileRequest;
+import com.example.filedemo.payload.PagingListResponse;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.repository.FileRepository;
 import com.example.filedemo.service.FileStorageService;
@@ -25,6 +28,7 @@ import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import java.sql.Blob;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,55 +65,12 @@ public class FileController {
         return uploadFileResponse;
     }
 
+    //Upload nhiều file
     @PostMapping(value = "/list")
     public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,@RequestParam("description") String description)throws IOException {
-        return Arrays.asList(files)
-                .stream()
-                .map(file -> {
-                    try {
-                        return uploadFile(file,description);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
-                .collect(Collectors.toList());
+        return fileStorageService.uploadFiles(files, description);
     }
-    @PutMapping(value = "{id}")
-    public UploadFileResponse updateFile(@RequestParam("id") int id,@RequestParam("file") MultipartFile file,@RequestParam("description") String description) throws IOException {
-
-        DBFile dbFile = fileStorageService.updateFile(file,id,description);
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/downloadFile/"+dbFile.getId())
-                .toUriString();
-        UploadFileResponse uploadFileResponse = new UploadFileResponse();
-        uploadFileResponse.setSize(file.getSize());
-        uploadFileResponse.setFileName(dbFile.getName());
-        uploadFileResponse.setFileType(dbFile.getType());
-        uploadFileResponse.setFileDownloadUri(fileDownloadUri);
-        uploadFileResponse.setDescription(dbFile.getDescription());
-        uploadFileResponse.setStatus(dbFile.getStatus());
-        uploadFileResponse.setModifiedOn(dbFile.getModifiedOn());
-        uploadFileResponse.setCreateOn(dbFile.getCreatedOn());
-        return uploadFileResponse;
-    }
-    @GetMapping(value = "{id}")
-    public UploadFileResponse getById(@PathVariable("id") int id) throws IOException {
-        val dbFile = fileRepository.findById(id);
-        if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/downloadFile/"+dbFile.get().getId())
-                .toUriString();
-        UploadFileResponse uploadFileResponse = new UploadFileResponse();
-        uploadFileResponse.setFileName(dbFile.get().getName());
-        uploadFileResponse.setFileType(dbFile.get().getType());
-        uploadFileResponse.setFileDownloadUri(fileDownloadUri);
-        uploadFileResponse.setDescription(dbFile.get().getDescription());
-        uploadFileResponse.setStatus(dbFile.get().getStatus());
-        uploadFileResponse.setModifiedOn(dbFile.get().getModifiedOn());
-        uploadFileResponse.setCreateOn(dbFile.get().getCreatedOn());
-        return uploadFileResponse;
-    }
+    //Api xóa file
     @DeleteMapping("/{id}")
     public void delete(@PathVariable("id") int id){
         val dbFile = fileRepository.findById(id);
@@ -123,15 +84,30 @@ public class FileController {
         }
 
     }
-    @GetMapping(value = "/download/{id}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable int id) throws MalformedURLException {
-        // Load file from database
+    //Api cập nhật mô tả file
+    @PutMapping("/{id}")
+    public UploadFileResponse update(@PathVariable("id") int id, @RequestBody FileRequest request){
         val dbFile = fileRepository.findById(id);
-        byte[] bytes = dbFile.get().getSize().getBytes(StandardCharsets.UTF_8);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(dbFile.get().getType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dbFile.get().getName() + "\"")
-                .body(new ByteArrayResource(bytes));
+        if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
+        dbFile.get().setModifiedOn(Common.getTimestamp());
+        dbFile.get().setDescription(request.getDescription());
+        try {
+            fileRepository.save(dbFile.get());
+        } catch (Exception e) {
+            throw new FileStorageException("Cập nhật file thành công");
+        }
+        return fileStorageService.mapperFileResponse(dbFile.get());
+    }
+    //Api download file
+    @GetMapping(value = "/download/{id}")
+    public ResponseEntity<?> downloadFile(@PathVariable int id) {
+        return fileStorageService.downloadFile(id);
+    }
+
+    //Api filter file
+    @GetMapping
+    public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter){
+        return fileStorageService.filter(filter);
     }
 
 }

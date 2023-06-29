@@ -25,12 +25,11 @@ public class DBFile {
     @Column(name = "description")
     private String description;
     @Column(name = "size")
-    private String size;
+    private long size;
     @Column(name = "status")
     private int status;
     @Column(name = "created_on")
     private long createdOn;
     @Column(name = "modified_on")
     private long modifiedOn;
-
 }

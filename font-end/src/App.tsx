@@ -11,6 +11,7 @@ import { AppState } from 'store/store';
 import { SnackbarProvider } from "notistack";
 import { SnackbarUtilsConfigurator } from "utilities/SnackbarUtilsConfigurator";
 import { ModalProvider } from 'components/Modal/ModalProvider';
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 const styles = {
   base: {
     "& span": {
@@ -42,9 +43,11 @@ const App = (props: PropsFromRedux & WithStyles<typeof styles>) => {
           }}
         >
           <SnackbarUtilsConfigurator />
+          <Router>
             <ModalProvider>
                 <ListFiles />
             </ModalProvider>
+            </Router>
         </SnackbarProvider>
       </ThemeProvider>
 

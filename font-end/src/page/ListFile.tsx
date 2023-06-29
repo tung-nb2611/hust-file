@@ -90,6 +90,7 @@ const ListFiles = () => {
     }
 
     const downloadFile = async (id?: number, fileName?: string) => {
+        debugger
         axios.get(`http://localhost:8080/api/file/download/${id}`, { responseType: "blob" })
             .then(response => {
                 const blob = new Blob([response.data]);

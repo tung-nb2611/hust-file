@@ -103,6 +103,11 @@ public class FileController {
     public ResponseEntity<?> downloadFile(@PathVariable int id) {
         return fileStorageService.downloadFile(id);
     }
+    //Api download file
+    @GetMapping(value = "/view/{id}")
+    public ResponseEntity<byte[]>  viewFile(@PathVariable int id)  throws IOException{
+        return fileStorageService.getImage(id);
+    }
 
     //Api filter file
     @GetMapping

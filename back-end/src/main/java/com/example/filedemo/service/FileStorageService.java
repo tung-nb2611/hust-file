@@ -25,10 +25,17 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
+
+import javax.imageio.ImageIO;
 
 @Service
 public class FileStorageService {
@@ -146,14 +153,35 @@ public class FileStorageService {
         if (resource == null) {
             return new ResponseEntity<>("File not found", HttpStatus.NOT_FOUND);
         }
-
         String contentType = "application/octet-stream";
         String headerValue = "attachment; filename=\"" + resource.getFilename() + "\"";
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
                 .body(resource);
+    }
+    public ResponseEntity<byte[]> getImage (int id) throws IOException {
+        val dbFile = fileRepository.findById(id);
+        FileDownloadUtil downloadUtil = new FileDownloadUtil();
+        Resource resource = null;
+        try {
+            resource = downloadUtil.getFileAsResource(dbFile.get().getName(), sourceFile);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        BufferedImage originalImage = ImageIO.read(resource.getInputStream());
+        int originalHeight = originalImage.getHeight();
+        int originalWidth = originalImage.getWidth();
+        int newWidth = (int) Math.round((double) 20 / originalHeight * originalWidth);
+        Image scaledImage = originalImage.getScaledInstance(newWidth, 50, Image.SCALE_SMOOTH);
+        BufferedImage bufferedScaledImage = new BufferedImage(newWidth, 20, BufferedImage.TYPE_INT_RGB);
+        bufferedScaledImage.getGraphics().drawImage(scaledImage, 0, 0 , null);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedScaledImage, "jpg", baos);
+        byte[] imageBytes = baos.toByteArray();
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG)
+                .body(imageBytes);
     }
 
 }

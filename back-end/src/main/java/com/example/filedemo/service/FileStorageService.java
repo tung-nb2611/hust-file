@@ -173,10 +173,9 @@ public class FileStorageService {
         int originalHeight = originalImage.getHeight();
         int originalWidth = originalImage.getWidth();
         int newWidth = (int) Math.round((double) 20 / originalHeight * originalWidth);
-        Image scaledImage = originalImage.getScaledInstance(newWidth, 50, Image.SCALE_SMOOTH);
-        BufferedImage bufferedScaledImage = new BufferedImage(newWidth, 20, BufferedImage.TYPE_INT_RGB);
+        Image scaledImage = originalImage.getScaledInstance(720, 300, Image.SCALE_SMOOTH);
+        BufferedImage bufferedScaledImage = new BufferedImage(720, 300, BufferedImage.TYPE_INT_RGB);
         bufferedScaledImage.getGraphics().drawImage(scaledImage, 0, 0 , null);
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(bufferedScaledImage, "jpg", baos);
         byte[] imageBytes = baos.toByteArray();

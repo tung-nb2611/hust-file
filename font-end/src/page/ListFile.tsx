@@ -176,13 +176,13 @@ const ListFiles = () => {
                                     <TableCell>{file.stt}</TableCell>
                                     <TableCell>
                                         {file.fileType.includes("image") ?
-                                            <Box style={{cursor: "pointer"}} onClick={() => { setPathImage(file.path); setOpenDialogImage(true) }}>
-                                                <Image src={file.path} width="35px" />
+                                            <Box style={{cursor: "pointer"}} onClick={() => { setPathImage(`http://localhost:8080//api/file/view/${file.id}`); setOpenDialogImage(true) }}>
+                                                <Image src={`http://localhost:8080//api/file/view/${file.id}`} width="50px"  height="50px"/>
                                             </Box> :
                                             <Box
                                                 style={{
-                                                    width: "40px",
-                                                    height: "40px",
+                                                    width: "50px",
+                                                    height: "50px",
                                                     background: "#E8EAEB",
                                                     borderRadius: "6px",
                                                 }}

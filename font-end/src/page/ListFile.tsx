@@ -19,10 +19,11 @@ import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import CloseSmallIcon from "components/SVG/CloseSmallIcon";
 import useModal from "components/Modal/useModal";
 import ConfirmDialog from "components/Dialog/ConfirmDialog/ConfirmDialog";
-import { PencilIcon } from "components/SVG";
+import { LongArrowDownIcon, PencilIcon } from "components/SVG";
 import Dialog from "components/Dialog/Dialog";
 import TextareaAutosize from "components/TextField/TextareaAutosize/TextareaAutosize";
 import Image from "components/Image";
+import { Replay } from '@material-ui/icons';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -148,6 +149,11 @@ const ListFiles = () => {
                 <Box style={{ margin: "auto", width: "90%", height: "100%" }}>
                     <Box style={{ width: "100%", height: 60 }}>
                         <Button variant="contained" color="primary" style={{ marginTop: "10px" }} endIcon={<BasicDownloadIcon />} onClick={() => { setOpenDialogUploadFile(true); }}>Upload file</Button>
+                        <IconButton onClick={() => {
+                            initData();
+                            SnackbarUtils.success("Tải lại trang thành công!");
+                            return;
+                        }}><Replay /></IconButton>
                     </Box>
                     <Box style={{ border: "1px solid #D3D5D7", borderRadius: 3, marginTop: 16 }}>
                         <SearchBox
@@ -176,8 +182,8 @@ const ListFiles = () => {
                                     <TableCell>{file.stt}</TableCell>
                                     <TableCell>
                                         {file.fileType.includes("image") ?
-                                            <Box style={{cursor: "pointer"}} onClick={() => { setPathImage(`http://localhost:8080//api/file/view/${file.id}`); setOpenDialogImage(true) }}>
-                                                <Image src={`http://localhost:8080//api/file/view/${file.id}`} width="50px"  height="50px"/>
+                                            <Box style={{ cursor: "pointer" }} onClick={() => { setPathImage(`http://localhost:8080//api/file/view/${file.id}`); setOpenDialogImage(true) }}>
+                                                <Image src={`http://localhost:8080//api/file/view/${file.id}`} width="50px" height="50px" />
                                             </Box> :
                                             <Box
                                                 style={{

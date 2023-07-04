@@ -1,8 +1,8 @@
 import { AxiosRequestConfig } from "axios";
 import qs from "qs";
 
-export const REACT_APP_API_BASE_URL = `http://localhost:8080`;
-//export const REACT_APP_API_BASE_URL = `https://f5dc-42-113-130-94.ngrok-free.app/`;
+export const REACT_APP_API_BASE_URL = `http://localhost:8888`;
+
 
 export const getAxiosConfig = (): AxiosRequestConfig => {
     return {
@@ -15,6 +15,7 @@ export const getAxiosConfig = (): AxiosRequestConfig => {
       paramsSerializer(params) {
         return qs.stringify(params, { arrayFormat: "comma" });
       },
-      headers: {},
+      withCredentials: false,
+      headers: {changeOrigin: true},
     };
   };

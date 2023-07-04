@@ -9,7 +9,6 @@ import com.example.filedemo.payload.PagingListResponse;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.repository.FileRepository;
 import lombok.val;
-import lombok.var;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -103,8 +102,8 @@ public class FileStorageService {
     public List<UploadFileResponse> uploadFiles(MultipartFile[] files, String description) throws IOException {
         List<UploadFileResponse> responses = new ArrayList<>();
         if (files != null && files.length > 0) {
-            for (var file : files) {
-                var uploadFileResponse = uploadFile(file, description);
+            for (val file : files) {
+                val uploadFileResponse = uploadFile(file, description);
                 responses.add(uploadFileResponse);
             }
         }
@@ -112,13 +111,13 @@ public class FileStorageService {
     }
 
     public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter) {
-        var query = "%" + (filter.getQuery() != null ? filter.getQuery() : "") + "%";
+        val query = "%" + (filter.getQuery() != null ? filter.getQuery() : "") + "%";
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         Pageable pageable = PageRequest.of(filter.getPage() - 1, filter.getLimit(), sort);
         List<Integer> statuses = new ArrayList<>();
         if (filter.getStatuses() != null) {
             val statusArr = filter.getStatuses().split(",");
-            for (var status : statusArr) {
+            for (val status : statusArr) {
                 if (status.equals("1")) {
                     statuses.add(1);
                 }
@@ -128,10 +127,10 @@ public class FileStorageService {
         } else {
             statuses.add(1);
         }
-        var files = fileRepository.filter(query, statuses, pageable);
+        val files = fileRepository.filter(query, statuses, pageable);
         List<UploadFileResponse> responses = new ArrayList<>();
         for (val file : files.getContent()) {
-            var response = mapperFileResponse(file);
+            val response = mapperFileResponse(file);
             responses.add(response);
         }
         return new PagingListResponse<>(

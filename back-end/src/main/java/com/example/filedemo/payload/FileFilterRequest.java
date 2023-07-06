@@ -10,4 +10,5 @@ import java.util.List;
 public class FileFilterRequest extends PagingFilterRequest {
     private String query;
     private String statuses;
+    private int folderId;
 }

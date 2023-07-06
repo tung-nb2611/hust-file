@@ -12,6 +12,7 @@ import lombok.val;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -49,7 +50,7 @@ public class FileStorageService {
     }
 
     //Hàm lưu dữ liệu và file
-    public DBFile storeFile(MultipartFile file, String description) throws IOException {
+    public DBFile storeFile(MultipartFile file, String description, int folderId) throws IOException {
         // lấy tên file
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         // Check nếu tên file trống báo lỗi
@@ -65,14 +66,15 @@ public class FileStorageService {
         dbFile.setCreatedOn(Common.getTimestamp());
         dbFile.setModifiedOn(Common.getTimestamp());
         dbFile.setSize(file.getSize());
+        if(folderId == 0) dbFile.setFolderId(folderId);
         //Chuyển file cần lưu vào folder lưu trữ
         file.transferTo(new File(
                 sourceFile + file.getOriginalFilename()));
         return fileRepository.save(dbFile);
     }
     //Hàm upload 1 file
-    public UploadFileResponse uploadFile(MultipartFile file, String description) throws IOException {
-        DBFile dbFile = storeFile(file, description);
+    public UploadFileResponse uploadFile(MultipartFile file, String description, int folderId) throws IOException {
+        DBFile dbFile = storeFile(file, description, folderId);
 
         UploadFileResponse uploadFileResponse = mapperFileResponse(dbFile);
         return uploadFileResponse;
@@ -90,6 +92,11 @@ public class FileStorageService {
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/downloadFile/" + dbFile.getId())
                 .toUriString();
+        // Tìm folder cha
+        if(dbFile.getFolderId() != null){
+            val folder = fileRepository.findById(dbFile.getFolderId());
+            uploadFileResponse.setFolderName(folder.get().getName());
+        }
         uploadFileResponse.setFileDownloadUri(fileDownloadUri);
         uploadFileResponse.setDescription(dbFile.getDescription());
         uploadFileResponse.setStatus(dbFile.getStatus());
@@ -98,12 +105,12 @@ public class FileStorageService {
         return uploadFileResponse;
     }
     //Hàm upload nhiều file
-    public List<UploadFileResponse> uploadFiles(MultipartFile[] files, String description) throws IOException {
+    public List<UploadFileResponse> uploadFiles(MultipartFile[] files, String description, int folderId) throws IOException {
         List<UploadFileResponse> responses = new ArrayList<>();
         if (files != null && files.length > 0) {
             for (val file : files) {
                 //upload từng file
-                val uploadFileResponse = uploadFile(file, description);
+                val uploadFileResponse = uploadFile(file, description, folderId);
                 responses.add(uploadFileResponse);
             }
         }
@@ -131,8 +138,14 @@ public class FileStorageService {
         } else {
             statuses.add(1);
         }
+        Page<DBFile> files ;
         //truyền param để filter danh sách
-        val files = fileRepository.filter(query, statuses, pageable);
+        if(filter.getFolderId() != 0){
+            files = fileRepository.filterFolder(query, statuses, pageable, filter.getFolderId());
+        }else {
+            files = fileRepository.filter(query, statuses, pageable);
+        }
+
         List<UploadFileResponse> responses = new ArrayList<>();
         //mapper dữ liệu
         for (val file : files.getContent()) {

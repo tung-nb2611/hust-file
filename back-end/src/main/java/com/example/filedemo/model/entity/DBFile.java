@@ -32,4 +32,6 @@ public class DBFile {
     private long createdOn;
     @Column(name = "modified_on")
     private long modifiedOn;
+    @Column(name = "folder_id")
+    private Integer folderId;
 }

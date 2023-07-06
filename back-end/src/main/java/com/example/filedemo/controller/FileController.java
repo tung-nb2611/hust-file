@@ -46,8 +46,10 @@ public class FileController {
 
     //Upload nhiều file
     @PostMapping(value = "/list")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,@RequestParam("description") String description)throws IOException {
-        return fileStorageService.uploadFiles(files, description);
+    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,
+                                                        @RequestParam("description") String description,
+                                                        @RequestParam("folder_id") int folderId)throws IOException {
+        return fileStorageService.uploadFiles(files, description, folderId);
     }
     //Api xóa file
     @DeleteMapping("/{id}/delete")

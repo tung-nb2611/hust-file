@@ -12,13 +12,4 @@ public class WebConfiguration implements WebMvcConfigurer {
         registry.addResourceHandler("/upload/**")
                 .addResourceLocations("file:upload/");
     }
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("https://6eea-42-113-130-94.ngrok-free.app") // Thay thế bằng địa chỉ public URL của React.js từ ngrok
-                .allowedMethods("GET", "POST", "PUT", "DELETE")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
 }

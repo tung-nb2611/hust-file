@@ -30,15 +30,19 @@ class FileServices {
     return axios.get("/api/file",{
         ...getAxiosConfig(),
         params: filter,
+        headers: {
+          ...getAxiosConfig().headers,
+        },
+        
       });
   }
   static async updateFile(id?: number, request?: FileRequest): Promise<AxiosResponse<FileResponse>> {
-    return axios.put(`/api/file/${id}`,request,{
+    return axios.put(`/api/file/edit/${id}`,request,{
         ...getAxiosConfig(),
       });
   }
   static async delete(id?: number): Promise<AxiosResponse<FileResponse>> {
-    return axios.delete(`/api/file/${id}`,{
+    return axios.delete(`/api/file/${id}/delete`,{
         ...getAxiosConfig(),
       });
   }

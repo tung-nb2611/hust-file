@@ -10,6 +10,7 @@ import { getMessageError } from "utilities/Error";
 import TextareaAutosize from "components/TextField/TextareaAutosize/TextareaAutosize";
 import { formatNumber, formatSizeFileMB } from "utilities/Helpers";
 import CloseSmallIcon from "components/SVG/CloseSmallIcon";
+import { useHistory } from "react-router-dom";
 
 export interface DialogUploadFileProps {
     open: boolean;
@@ -17,6 +18,7 @@ export interface DialogUploadFileProps {
 }
 const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof styles>) => {
     const { open, onClose, classes } = props;
+    const history = useHistory();
     const [fileImport, setFileImport] = React.useState<File[] | null>();
     const [description, setDescription] = React.useState<string | undefined>();
     const { getRootProps, getInputProps } = useDropzone({
@@ -51,6 +53,7 @@ const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof style
                         SnackbarUtils.success("Upload file thành công");
                         onClose();
                         setFileImport(undefined)
+                        window.location.reload()
                     })
                     .catch((e) => {
                         SnackbarUtils.error(getMessageError(e));

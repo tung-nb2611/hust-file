@@ -19,7 +19,11 @@ import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import CloseSmallIcon from "components/SVG/CloseSmallIcon";
 import useModal from "components/Modal/useModal";
 import ConfirmDialog from "components/Dialog/ConfirmDialog/ConfirmDialog";
-import { PencilIcon } from "components/SVG";
+import { LongArrowDownIcon, PencilIcon } from "components/SVG";
+import Dialog from "components/Dialog/Dialog";
+import TextareaAutosize from "components/TextField/TextareaAutosize/TextareaAutosize";
+import Image from "components/Image";
+import { Replay } from '@material-ui/icons';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -55,6 +59,10 @@ const useStyles = makeStyles((theme: Theme) =>
 const ListFiles = () => {
     const classes = useStyles();
     const [openDialogUploadFile, setOpenDialogUploadFile] = useState(false);
+    const [openDialogUpdate, setOpenDialogUpdate] = useState(false);
+    const [openDialogImage, setOpenDialogImage] = useState(false);
+    const [pathImage, setPathImage] = useState("");
+    const [request, setRequest] = useState<{ id?: number, description?: string }>();
     const [filter, setFilter] = useState<FileFilterRequest>({ limit: 20, statuses: "1" });
     const [data, setData] = useState<DataResult>({
         data: [],
@@ -83,6 +91,7 @@ const ListFiles = () => {
     }
 
     const downloadFile = async (id?: number, fileName?: string) => {
+        debugger
         axios.get(`http://localhost:8080/api/file/download/${id}`, { responseType: "blob" })
             .then(response => {
                 const blob = new Blob([response.data]);
@@ -95,7 +104,7 @@ const ListFiles = () => {
 
     }
 
-    const deleted = async(id?: number) => {
+    const deleted = async (id?: number) => {
         openModal(ConfirmDialog, {
             message: "Bạn có chắc chắn muốn xóa file này không?",
             title: "Xóa file",
@@ -106,7 +115,7 @@ const ListFiles = () => {
             if (res) {
                 try {
                     let resD = await FileServices.delete(id);
-                    if(resD){
+                    if (resD) {
                         SnackbarUtils.success("Xóa file thành công!");
                         initData();
                     }
@@ -115,7 +124,19 @@ const ListFiles = () => {
                 }
             }
         })
-        
+    }
+
+    const updateFile = async () => {
+        setOpenDialogUpdate(false)
+        try {
+            let resD = await FileServices.updateFile(request?.id, { description: request?.description });
+            if (resD) {
+                SnackbarUtils.success("Cập nhật mô tả thành công!");
+                initData();
+            }
+        } catch (error) {
+            SnackbarUtils.error("Cập nhật mô tả thất bại!");
+        }
     }
     const handleSearch = (value: any) => {
         if (!value || !value?.trim()) {
@@ -128,6 +149,11 @@ const ListFiles = () => {
                 <Box style={{ margin: "auto", width: "90%", height: "100%" }}>
                     <Box style={{ width: "100%", height: 60 }}>
                         <Button variant="contained" color="primary" style={{ marginTop: "10px" }} endIcon={<BasicDownloadIcon />} onClick={() => { setOpenDialogUploadFile(true); }}>Upload file</Button>
+                        <IconButton onClick={() => {
+                            initData();
+                            SnackbarUtils.success("Tải lại trang thành công!");
+                            return;
+                        }}><Replay /></IconButton>
                     </Box>
                     <Box style={{ border: "1px solid #D3D5D7", borderRadius: 3, marginTop: 16 }}>
                         <SearchBox
@@ -142,6 +168,7 @@ const ListFiles = () => {
                         <Table stickyHeader>
                             <TableHead>
                                 <TableCell>STT</TableCell>
+                                <TableCell></TableCell>
                                 <TableCell>Tên file</TableCell>
                                 <TableCell>Ghi chú</TableCell>
                                 <TableCell>Loại file</TableCell>
@@ -153,15 +180,33 @@ const ListFiles = () => {
                             {data.data && data.data.length > 0 ? (data.data.map((file, index) => (
                                 <TableBody key={index}>
                                     <TableCell>{file.stt}</TableCell>
+                                    <TableCell>
+                                        {file.fileType.includes("image") ?
+                                            <Box style={{ cursor: "pointer" }} onClick={() => { setPathImage(`http://localhost:8080//api/file/view/${file.id}`); setOpenDialogImage(true) }}>
+                                                <Image src={`http://localhost:8080//api/file/view/${file.id}`} width="50px" height="50px" />
+                                            </Box> :
+                                            <Box
+                                                style={{
+                                                    width: "50px",
+                                                    height: "50px",
+                                                    background: "#E8EAEB",
+                                                    borderRadius: "6px",
+                                                }}
+                                            >
+                                            </Box>}
+                                    </TableCell>
                                     <TableCell><Link to="#" onClick={() => { downloadFile(file.id, file.fileName) }}>{file.fileName}</Link></TableCell>
-                                    <TableCell>{file.description} <PencilIcon style={{marginLeft: 10, width: 15, cursor: "pointer"}} color="disabled" /></TableCell>
+                                    <TableCell>{file.description}
+                                        <PencilIcon style={{ marginLeft: 10, width: 15, cursor: "pointer" }} color="disabled"
+                                            onClick={() => { setOpenDialogUpdate(true); setRequest({ id: file.id, description: file.description }) }} />
+                                    </TableCell>
                                     <TableCell>{file.fileType}</TableCell>
                                     <TableCell>{formatSizeFileMB(file.size)}</TableCell>
                                     <TableCell>{formatDateUTCToLocalDateString(file.createdOn)}</TableCell>
                                     <TableCell>{formatDateUTCToLocalDateString(file.modifiedOn)}</TableCell>
                                     <TableCell>
-                                    <IconButton onClick={() => { downloadFile(file.id, file.fileName) }}><CloudDownloadIcon color="primary" /></IconButton>
-                                    <IconButton onClick={() => { deleted(file.id) }}><CloseSmallIcon color="disabled" style={{width: 12}} /></IconButton>
+                                        <IconButton onClick={() => { downloadFile(file.id, file.fileName) }}><CloudDownloadIcon color="primary" /></IconButton>
+                                        <IconButton onClick={() => { deleted(file.id) }}><CloseSmallIcon color="disabled" style={{ width: 12 }} /></IconButton>
                                     </TableCell>
                                 </TableBody>
                             ))) : (
@@ -190,6 +235,45 @@ const ListFiles = () => {
                 onClose={() => {
                     setOpenDialogUploadFile(false);
                 }} />
+            <Dialog
+                open={openDialogUpdate}
+                onClose={() => {
+                    setOpenDialogUpdate(false)
+                }}
+                title={"Cập nhật mô tả của file"}
+                onOk={() => { updateFile(); }}
+                textOk={"Lưu"}
+                minWidthPaper="790px"
+                DialogTitleProps={{
+                    dividerBottom: true
+                }}
+                children={
+                    <Box padding={"16px"}>
+                        <TextareaAutosize
+                            label="Ghi chú"
+                            onChange={(e) => {
+                                setRequest({ ...request, description: e.target.value })
+                            }}
+                            value={request?.description}
+                        />
+                    </Box>
+                }
+            />
+            <Dialog
+                open={openDialogImage}
+                onClose={() => {
+                    setOpenDialogImage(false)
+                }}
+                minWidthPaper="790px"
+                DialogTitleProps={{
+                    dividerBottom: true
+                }}
+                children={
+                    <Box padding={"16px"}>
+                        <Image src={pathImage} />
+                    </Box>
+                }
+            />
         </Fragment>
     );
 };

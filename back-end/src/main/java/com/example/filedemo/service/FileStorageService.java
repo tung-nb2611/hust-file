@@ -2,7 +2,6 @@ package com.example.filedemo.service;
 
 import com.example.filedemo.common.Common;
 import com.example.filedemo.common.FileDownloadUtil;
-import com.example.filedemo.common.FileStorageProperties;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
 import com.example.filedemo.payload.FileFilterRequest;
@@ -10,9 +9,7 @@ import com.example.filedemo.payload.PagingListResponse;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.repository.FileRepository;
 import lombok.val;
-import lombok.var;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
@@ -27,37 +24,31 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
+
+import javax.imageio.ImageIO;
 
 @Service
 public class FileStorageService {
 
-    private final Path fileStorageLocation;
-    @Autowired
-    private FileRepository fileRepository;
+    private final FileRepository fileRepository;
     @Value("${file.upload-dir}")
     private String sourceFile;
 
     private final ModelMapper mapper;
 
-    @Autowired
-    // lưu file vào thư mục đã setup
-    public FileStorageService(FileStorageProperties fileStorageProperties, ModelMapper mapper) {
-        this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
-                .toAbsolutePath().normalize();
+    public FileStorageService(FileRepository fileRepository, ModelMapper mapper) {
+        this.fileRepository = fileRepository;
         this.mapper = mapper;
 
-        try {
-            Files.createDirectories(this.fileStorageLocation);
-        } catch (Exception ex) {
-            throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
-        }
     }
 
     public DBFile storeFile(MultipartFile file, String description) throws IOException {
@@ -65,7 +56,7 @@ public class FileStorageService {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         // Check nếu tên file trống báo lỗi
         if (fileName.contains("..")) {
-            throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
+            throw new FileStorageException("Tên file chứa path không hợp lệ" + fileName);
         }
         DBFile dbFile = new DBFile();
         dbFile.setName(fileName);
@@ -93,6 +84,9 @@ public class FileStorageService {
         uploadFileResponse.setSize(dbFile.getSize());
         uploadFileResponse.setId(dbFile.getId());
         uploadFileResponse.setFileName(dbFile.getName());
+        uploadFileResponse.setPath(ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/upload/" + dbFile.getName())
+                .toUriString());
         uploadFileResponse.setFileType(dbFile.getType());
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/downloadFile/" + dbFile.getId())
@@ -108,8 +102,8 @@ public class FileStorageService {
     public List<UploadFileResponse> uploadFiles(MultipartFile[] files, String description) throws IOException {
         List<UploadFileResponse> responses = new ArrayList<>();
         if (files != null && files.length > 0) {
-            for (var file : files) {
-                var uploadFileResponse = uploadFile(file, description);
+            for (val file : files) {
+                val uploadFileResponse = uploadFile(file, description);
                 responses.add(uploadFileResponse);
             }
         }
@@ -117,13 +111,13 @@ public class FileStorageService {
     }
 
     public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter) {
-        var query = "%" + (filter.getQuery() != null ? filter.getQuery() : "") + "%";
+        val query = "%" + (filter.getQuery() != null ? filter.getQuery() : "") + "%";
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         Pageable pageable = PageRequest.of(filter.getPage() - 1, filter.getLimit(), sort);
         List<Integer> statuses = new ArrayList<>();
         if (filter.getStatuses() != null) {
             val statusArr = filter.getStatuses().split(",");
-            for (var status : statusArr) {
+            for (val status : statusArr) {
                 if (status.equals("1")) {
                     statuses.add(1);
                 }
@@ -133,10 +127,10 @@ public class FileStorageService {
         } else {
             statuses.add(1);
         }
-        var files = fileRepository.filter(query, statuses, pageable);
+        val files = fileRepository.filter(query, statuses, pageable);
         List<UploadFileResponse> responses = new ArrayList<>();
         for (val file : files.getContent()) {
-            var response = mapperFileResponse(file);
+            val response = mapperFileResponse(file);
             responses.add(response);
         }
         return new PagingListResponse<>(
@@ -158,14 +152,34 @@ public class FileStorageService {
         if (resource == null) {
             return new ResponseEntity<>("File not found", HttpStatus.NOT_FOUND);
         }
-
         String contentType = "application/octet-stream";
         String headerValue = "attachment; filename=\"" + resource.getFilename() + "\"";
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
                 .body(resource);
+    }
+    public ResponseEntity<byte[]> getImage (int id) throws IOException {
+        val dbFile = fileRepository.findById(id);
+        FileDownloadUtil downloadUtil = new FileDownloadUtil();
+        Resource resource = null;
+        try {
+            resource = downloadUtil.getFileAsResource(dbFile.get().getName(), sourceFile);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        BufferedImage originalImage = ImageIO.read(resource.getInputStream());
+        int originalHeight = originalImage.getHeight();
+        int originalWidth = originalImage.getWidth();
+        int newWidth = (int) Math.round((double) 20 / originalHeight * originalWidth);
+        Image scaledImage = originalImage.getScaledInstance(720, 300, Image.SCALE_SMOOTH);
+        BufferedImage bufferedScaledImage = new BufferedImage(720, 300, BufferedImage.TYPE_INT_RGB);
+        bufferedScaledImage.getGraphics().drawImage(scaledImage, 0, 0 , null);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedScaledImage, "jpg", baos);
+        byte[] imageBytes = baos.toByteArray();
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG)
+                .body(imageBytes);
     }
 
     //Hàm thêm sản phẩm

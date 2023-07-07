@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/file")
-@CrossOrigin("http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000")
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
@@ -99,6 +99,11 @@ public class FileController {
     @GetMapping(value = "/download/{id}")
     public ResponseEntity<?> downloadFile(@PathVariable int id) {
         return fileStorageService.downloadFile(id);
+    }
+    //Api download file
+    @GetMapping(value = "/view/{id}")
+    public ResponseEntity<byte[]>  viewFile(@PathVariable int id)  throws IOException{
+        return fileStorageService.getImage(id);
     }
 
     //Api filter file

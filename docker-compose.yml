@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  mysql-file:
+    container_name: mysql-file
+    image: mysql
+    ports:
+      - "8084:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: file-demo
+    networks:
+      hust-file-net:
+
+  server:
+    container_name: server
+    build:
+      context: ./back-end/
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    depends_on:
+      - mysql-file
+    networks:
+      hust-file-net:
+    restart: on-failure
+
+  client:
+    container_name: client
+    build:
+      context: ./font-end/
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql-file
+    networks:
+      hust-file-net:
+    restart: on-failure
+networks:
+  hust-file-net:
+
+

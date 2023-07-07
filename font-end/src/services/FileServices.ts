@@ -4,6 +4,7 @@ import {
   FileFilterRequest,
     FileRequest,
     FileResponse,
+    FolderRequest,
     ListFileResponse
 } from "./types";
 
@@ -43,6 +44,12 @@ class FileServices {
   }
   static async delete(id?: number): Promise<AxiosResponse<FileResponse>> {
     return axios.delete(`/api/file/${id}/delete`,{
+        ...getAxiosConfig(),
+      });
+  }
+  
+  static async addFolder(request?: FolderRequest): Promise<AxiosResponse<FileResponse>> {
+    return axios.post(`/api/file/folder`,request,{
         ...getAxiosConfig(),
       });
   }

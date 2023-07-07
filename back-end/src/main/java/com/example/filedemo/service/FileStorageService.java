@@ -5,6 +5,7 @@ import com.example.filedemo.common.FileDownloadUtil;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
 import com.example.filedemo.payload.FileFilterRequest;
+import com.example.filedemo.payload.FolderRequest;
 import com.example.filedemo.payload.PagingListResponse;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.repository.FileRepository;
@@ -22,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -32,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -66,7 +69,7 @@ public class FileStorageService {
         dbFile.setCreatedOn(Common.getTimestamp());
         dbFile.setModifiedOn(Common.getTimestamp());
         dbFile.setSize(file.getSize());
-        if(folderId == 0) dbFile.setFolderId(folderId);
+        if(folderId != 0) dbFile.setFolderId(folderId);
         //Chuyển file cần lưu vào folder lưu trữ
         file.transferTo(new File(
                 sourceFile + file.getOriginalFilename()));
@@ -93,7 +96,7 @@ public class FileStorageService {
                 .path("/downloadFile/" + dbFile.getId())
                 .toUriString();
         // Tìm folder cha
-        if(dbFile.getFolderId() != null){
+        if(dbFile.getFolderId() != null && dbFile.getFolderId() != 0){
             val folder = fileRepository.findById(dbFile.getFolderId());
             uploadFileResponse.setFolderName(folder.get().getName());
         }
@@ -202,5 +205,16 @@ public class FileStorageService {
     }
 
     //Hàm thêm sản phẩm
-
+    public UploadFileResponse addFolder( FolderRequest request){
+        DBFile file = new DBFile();
+        file.setName(request.getName());
+        if(request.getFolderId() != null) file.setFolderId(request.getFolderId());
+        file.setCreatedOn(Common.getTimestamp());
+        file.setType("folder");
+        file.setDescription("");
+        file.setModifiedOn(Common.getTimestamp());
+        file.setStatus(1);
+        file = fileRepository.save(file);
+        return mapperFileResponse(file);
+    }
 }

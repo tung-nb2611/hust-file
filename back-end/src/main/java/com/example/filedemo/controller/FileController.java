@@ -96,9 +96,9 @@ public class FileController {
 
 
     //Api tạo folder
-    @PostMapping
+    @PostMapping("/folder")
     public UploadFileResponse addFolder(@RequestBody FolderRequest request){
-
+        return fileStorageService.addFolder(request);
     }
 
 }

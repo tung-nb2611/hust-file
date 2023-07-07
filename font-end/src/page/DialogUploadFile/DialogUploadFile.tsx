@@ -11,13 +11,16 @@ import TextareaAutosize from "components/TextField/TextareaAutosize/TextareaAuto
 import { formatNumber, formatSizeFileMB } from "utilities/Helpers";
 import CloseSmallIcon from "components/SVG/CloseSmallIcon";
 import { useHistory } from "react-router-dom";
+import { toString } from "lodash";
 
 export interface DialogUploadFileProps {
     open: boolean;
     onClose: () => void;
+    folderId?: number;
+    initData: () => void;
 }
 const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof styles>) => {
-    const { open, onClose, classes } = props;
+    const { open, onClose, classes, folderId, initData } = props;
     const history = useHistory();
     const [fileImport, setFileImport] = React.useState<File[] | null>();
     const [description, setDescription] = React.useState<string | undefined>();
@@ -47,13 +50,15 @@ const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof style
 
             });
             data.append("description", description || "")
+            data.append("folder_id", toString(folderId || 0))
             try {
                 FileServices.uploadFiles(data)
                     .then((res) => {
                         SnackbarUtils.success("Upload file thành công");
                         onClose();
-                        setFileImport(undefined)
-                        window.location.reload()
+                        setFileImport(undefined);
+                        setDescription(undefined);
+                        initData();
                     })
                     .catch((e) => {
                         SnackbarUtils.error(getMessageError(e));
@@ -78,6 +83,7 @@ const DialogUploadFile = (props: DialogUploadFileProps & WithStyles<typeof style
                 open={open}
                 onClose={() => {
                     setFileImport(undefined);
+                    setDescription(undefined);
                     onClose();
                 }}
                 title={"Upload new file"}

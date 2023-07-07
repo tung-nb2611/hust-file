@@ -64,7 +64,13 @@ export type FileFilterRequest = {
   statuses?: string;
   page?: number;
   limit?: number;
+  folderId?: number;
 }
 export type FileRequest = {
   description?: string;
+}
+
+export type FolderRequest = {
+  name?: string;
+  folderId?: number;
 }

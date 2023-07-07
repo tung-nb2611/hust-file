@@ -3,10 +3,7 @@ package com.example.filedemo.controller;
 import com.example.filedemo.common.Common;
 import com.example.filedemo.exception.FileStorageException;
 import com.example.filedemo.model.entity.DBFile;
-import com.example.filedemo.payload.FileFilterRequest;
-import com.example.filedemo.payload.FileRequest;
-import com.example.filedemo.payload.PagingListResponse;
-import com.example.filedemo.payload.UploadFileResponse;
+import com.example.filedemo.payload.*;
 import com.example.filedemo.repository.FileRepository;
 import com.example.filedemo.service.FileStorageService;
 import org.springframework.core.io.Resource;
@@ -108,6 +105,13 @@ public class FileController {
     @GetMapping
     public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter){
         return fileStorageService.filter(filter);
+    }
+
+
+    //Api tạo folder
+    @PostMapping
+    public UploadFileResponse addFolder(@RequestBody FolderRequest request){
+
     }
 
 }

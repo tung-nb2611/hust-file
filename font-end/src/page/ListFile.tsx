@@ -24,6 +24,7 @@ import Dialog from "components/Dialog/Dialog";
 import TextareaAutosize from "components/TextField/TextareaAutosize/TextareaAutosize";
 import Image from "components/Image";
 import { Replay } from '@material-ui/icons';
+import { REACT_APP_API_BASE_URL } from "services/config";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -91,8 +92,7 @@ const ListFiles = () => {
     }
 
     const downloadFile = async (id?: number, fileName?: string) => {
-        debugger
-        axios.get(`http://localhost:8080/api/file/download/${id}`, { responseType: "blob" })
+        axios.post(`${REACT_APP_API_BASE_URL}/api/file/download/${id}`, { responseType: "blob" })
             .then(response => {
                 const blob = new Blob([response.data]);
                 //Download file
@@ -182,8 +182,8 @@ const ListFiles = () => {
                                     <TableCell>{file.stt}</TableCell>
                                     <TableCell>
                                         {file.fileType.includes("image") ?
-                                            <Box style={{ cursor: "pointer" }} onClick={() => { setPathImage(`http://localhost:8080//api/file/view/${file.id}`); setOpenDialogImage(true) }}>
-                                                <Image src={`http://localhost:8080//api/file/view/${file.id}`} width="50px" height="50px" />
+                                            <Box style={{ cursor: "pointer" }} onClick={() => { setPathImage(`${REACT_APP_API_BASE_URL}/api/file/view/${file.id}`); setOpenDialogImage(true) }}>
+                                                <Image src={`${REACT_APP_API_BASE_URL}/api/file/view/${file.id}`} width="50px" height="50px" />
                                             </Box> :
                                             <Box
                                                 style={{

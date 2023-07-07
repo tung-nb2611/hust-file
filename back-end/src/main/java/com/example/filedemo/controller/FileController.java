@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/file")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin("http://localhost:3000")
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
@@ -41,34 +41,15 @@ public class FileController {
     @Autowired
     private FileRepository fileRepository;
 
-// upload 1 file
-    @PostMapping
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file,@RequestParam("description") String description) throws IOException {
-        // lưu file vào db
-        DBFile dbFile = fileStorageService.storeFile(file,description);
-
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/downloadFile/"+dbFile.getId())
-                .toUriString();
-        UploadFileResponse uploadFileResponse = new UploadFileResponse();
-        uploadFileResponse.setSize(file.getSize());
-        uploadFileResponse.setFileName(dbFile.getName());
-        uploadFileResponse.setFileType(dbFile.getType());
-        uploadFileResponse.setFileDownloadUri(fileDownloadUri);
-        uploadFileResponse.setDescription(dbFile.getDescription());
-        uploadFileResponse.setStatus(dbFile.getStatus());
-        uploadFileResponse.setModifiedOn(dbFile.getModifiedOn());
-        uploadFileResponse.setCreateOn(dbFile.getCreatedOn());
-        return uploadFileResponse;
-    }
-
     //Upload nhiều file
     @PostMapping(value = "/list")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,@RequestParam("description") String description)throws IOException {
-        return fileStorageService.uploadFiles(files, description);
+    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files,
+                                                        @RequestParam("description") String description,
+                                                        @RequestParam("folder_id") int folderId)throws IOException {
+        return fileStorageService.uploadFiles(files, description, folderId);
     }
     //Api xóa file
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/delete")
     public void delete(@PathVariable("id") int id){
         val dbFile = fileRepository.findById(id);
         if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
@@ -82,7 +63,7 @@ public class FileController {
 
     }
     //Api cập nhật mô tả file
-    @PutMapping("/{id}")
+    @PutMapping("/edit/{id}")
     public UploadFileResponse update(@PathVariable("id") int id, @RequestBody FileRequest request){
         val dbFile = fileRepository.findById(id);
         if(dbFile.get() == null) throw new FileStorageException("không tìm thấy file");
@@ -101,6 +82,7 @@ public class FileController {
         return fileStorageService.downloadFile(id);
     }
     //Api download file
+    @CrossOrigin
     @GetMapping(value = "/view/{id}")
     public ResponseEntity<byte[]>  viewFile(@PathVariable int id)  throws IOException{
         return fileStorageService.getImage(id);
@@ -108,7 +90,7 @@ public class FileController {
 
     //Api filter file
     @GetMapping
-    public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter){
+    public PagingListResponse<UploadFileResponse> filter(FileFilterRequest filter) throws IOException{
         return fileStorageService.filter(filter);
     }
 

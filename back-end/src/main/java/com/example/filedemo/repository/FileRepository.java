@@ -12,6 +12,9 @@ import java.util.List;
 
 @Repository
 public interface FileRepository extends JpaRepository<DBFile, Integer>,JpaSpecificationExecutor<DBFile> {
-    @Query(value = "Select * from file as f where  lower(concat(f.name, '', f.description, '', f.type, '')) like lower(?1) and f.status in (?2)  ", nativeQuery = true)
+    @Query(value = "Select * from file as f where  lower(concat(f.name, '', f.description, '', f.type, '')) like lower(?1) and f.status in (?2)  and f.folder_id is NULL ", nativeQuery = true)
     Page<DBFile> filter(String query, List<Integer> statuses, Pageable pageable);
+
+    @Query(value = "Select * from file as f where  lower(concat(f.name, '', f.description, '', f.type, '')) like lower(?1) and f.status in (?2)  and f.folder_id = ?3 ", nativeQuery = true)
+    Page<DBFile> filterFolder(String query, List<Integer> statuses, Pageable pageable, int folderId);
 }
